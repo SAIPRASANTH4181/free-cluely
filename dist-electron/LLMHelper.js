@@ -4,10 +4,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LLMHelper = void 0;
-const generative_ai_1 = require("@google/generative-ai");
+const openai_1 = __importDefault(require("openai"));
 const fs_1 = __importDefault(require("fs"));
 class LLMHelper {
-    model;
+    client;
     systemPrompt = `You are Wingman AI, a helpful assistant for any kind of problem or situation (not just coding). For any user input, provide direct, concise answers without unnecessary suggestions or options unless specifically asked.
 
 IMPORTANT CODING GUIDELINES:
@@ -48,17 +48,13 @@ BEHAVIORAL INTERVIEW GUIDELINES:
 - Show both technical skills and soft skills (leadership, teamwork, problem-solving)
 - Demonstrate growth and learning from challenges`;
     constructor(apiKey) {
-        const genAI = new generative_ai_1.GoogleGenerativeAI(apiKey);
-        this.model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        this.client = new openai_1.default({
+            apiKey: apiKey,
+        });
     }
-    async fileToGenerativePart(imagePath) {
+    async fileToBase64(imagePath) {
         const imageData = await fs_1.default.promises.readFile(imagePath);
-        return {
-            inlineData: {
-                data: imageData.toString("base64"),
-                mimeType: "image/png"
-            }
-        };
+        return imageData.toString("base64");
     }
     cleanJsonResponse(text) {
         // Remove markdown code block syntax if present
@@ -69,16 +65,40 @@ BEHAVIORAL INTERVIEW GUIDELINES:
     }
     async extractProblemFromImages(imagePaths) {
         try {
-            const imageParts = await Promise.all(imagePaths.map(path => this.fileToGenerativePart(path)));
+            const imageContents = await Promise.all(imagePaths.map(async (path) => {
+                const base64 = await this.fileToBase64(path);
+                return {
+                    type: "image_url",
+                    image_url: {
+                        url: `data:image/png;base64,${base64}`
+                    }
+                };
+            }));
             const prompt = `${this.systemPrompt}\n\nYou are a wingman. Please analyze these images and extract the following information in JSON format:\n{
   "problem_statement": "A clear statement of the problem or situation depicted in the images. If it's a coding problem, be specific about requirements like array indexing.",
   "context": "Relevant background or context from the images.",
   "suggested_responses": ["First possible answer or action", "Second possible answer or action", "..."],
   "reasoning": "Explanation of why these suggestions are appropriate."
 }\nImportant: Return ONLY the JSON object, without any markdown formatting or code blocks.`;
-            const result = await this.model.generateContent([prompt, ...imageParts]);
-            const response = await result.response;
-            const text = this.cleanJsonResponse(response.text());
+            const response = await this.client.chat.completions.create({
+                model: "gpt-4o-mini",
+                messages: [
+                    {
+                        role: "system",
+                        content: this.systemPrompt
+                    },
+                    {
+                        role: "user",
+                        content: [
+                            { type: "text", text: prompt },
+                            ...imageContents
+                        ]
+                    }
+                ],
+                max_tokens: 2000,
+                temperature: 0.1
+            });
+            const text = this.cleanJsonResponse(response.choices[0].message.content || "");
             return JSON.parse(text);
         }
         catch (error) {
@@ -96,39 +116,70 @@ BEHAVIORAL INTERVIEW GUIDELINES:
     "reasoning": "Detailed explanation of the solution approach, time/space complexity, algorithm intuition, and why this solution is optimal."
   }
 }\n\nFor ANY coding problem (Arrays, Strings, Trees, Graphs, DP, System Design, etc.), ensure your code includes:\n- Complete implementation with proper edge case handling\n- Input validation and error handling\n- Clear comments explaining the algorithm logic\n- Example usage with test cases\n- Time and space complexity analysis\n- Multiple approaches when applicable (brute force, optimized)\n- Algorithm intuition and why it works\n- For system design: architecture diagrams and trade-offs\n- For complex algorithms: step-by-step breakdown\n\nFor behavioral questions, use STAR format with concrete examples and quantified results.\n\nImportant: Return ONLY the JSON object, without any markdown formatting or code blocks.`;
-        console.log("[LLMHelper] Calling Gemini LLM for solution...");
         try {
-            const result = await this.model.generateContent(prompt);
-            console.log("[LLMHelper] Gemini LLM returned result.");
-            const response = await result.response;
-            const text = this.cleanJsonResponse(response.text());
-            const parsed = JSON.parse(text);
-            console.log("[LLMHelper] Parsed LLM response:", parsed);
-            return parsed;
+            const response = await this.client.chat.completions.create({
+                model: "gpt-4o-mini",
+                messages: [
+                    {
+                        role: "system",
+                        content: this.systemPrompt
+                    },
+                    {
+                        role: "user",
+                        content: prompt
+                    }
+                ],
+                max_tokens: 4000,
+                temperature: 0.1
+            });
+            const text = this.cleanJsonResponse(response.choices[0].message.content || "");
+            return JSON.parse(text);
         }
         catch (error) {
-            console.error("[LLMHelper] Error in generateSolution:", error);
+            console.error("Error generating solution:", error);
             throw error;
         }
     }
     async debugSolutionWithImages(problemInfo, currentCode, debugImagePaths) {
         try {
-            const imageParts = await Promise.all(debugImagePaths.map(path => this.fileToGenerativePart(path)));
-            const prompt = `${this.systemPrompt}\n\nYou are a wingman. Given:\n1. The original problem or situation: ${JSON.stringify(problemInfo, null, 2)}\n2. The current response or approach: ${currentCode}\n3. The debug information in the provided images\n\nPlease analyze the debug information and provide feedback in this JSON format:\n{
-  "solution": {
-    "code": "Complete, production-ready code that handles ANY type of coding problem. Include comprehensive edge case handling, input validation, error handling, and clear comments. For complex algorithms, provide step-by-step implementation with multiple approaches when applicable.",
+            const imageContents = await Promise.all(debugImagePaths.map(async (path) => {
+                const base64 = await this.fileToBase64(path);
+                return {
+                    type: "image_url",
+                    image_url: {
+                        url: `data:image/png;base64,${base64}`
+                    }
+                };
+            }));
+            const prompt = `${this.systemPrompt}\n\nI have a coding problem and a current solution. Please analyze the additional images and debug/improve the solution.\n\nProblem: ${JSON.stringify(problemInfo, null, 2)}\n\nCurrent Code:\n${currentCode}\n\nPlease provide your response in the following JSON format:\n{
+  "debugged_solution": {
+    "code": "Improved, production-ready code that handles ANY type of coding problem. Include comprehensive edge case handling, input validation, error handling, and clear comments. For complex algorithms, provide step-by-step implementation with multiple approaches when applicable.",
     "problem_statement": "Restate the problem or situation.",
     "context": "Relevant background/context and problem analysis.",
     "suggested_responses": ["First possible answer or action", "Second possible answer or action", "..."],
     "reasoning": "Detailed explanation of the solution approach, time/space complexity, algorithm intuition, and why this solution is optimal."
   }
-}\n\nFor ANY coding problem (Arrays, Strings, Trees, Graphs, DP, System Design, etc.), ensure your code includes:\n- Complete implementation with proper edge case handling\n- Input validation and error handling\n- Clear comments explaining the algorithm logic\n- Example usage with test cases\n- Time and space complexity analysis\n- Multiple approaches when applicable (brute force, optimized)\n- Algorithm intuition and why it works\n- For system design: architecture diagrams and trade-offs\n- For complex algorithms: step-by-step breakdown\n\nImportant: Return ONLY the JSON object, without any markdown formatting or code blocks.`;
-            const result = await this.model.generateContent([prompt, ...imageParts]);
-            const response = await result.response;
-            const text = this.cleanJsonResponse(response.text());
-            const parsed = JSON.parse(text);
-            console.log("[LLMHelper] Parsed debug LLM response:", parsed);
-            return parsed;
+}\n\nFor ANY coding problem (Arrays, Strings, Trees, Graphs, DP, System Design, etc.), ensure your code includes:\n- Complete implementation with proper edge case handling\n- Input validation and error handling\n- Clear comments explaining the algorithm logic\n- Example usage with test cases\n- Time and space complexity analysis\n- Multiple approaches when applicable (brute force, optimized)\n- Algorithm intuition and why it works\n- For system design: architecture diagrams and trade-offs\n- For complex algorithms: step-by-step breakdown\n\nFor behavioral questions, use STAR format with concrete examples and quantified results.\n\nImportant: Return ONLY the JSON object, without any markdown formatting or code blocks.`;
+            const response = await this.client.chat.completions.create({
+                model: "gpt-4o-mini",
+                messages: [
+                    {
+                        role: "system",
+                        content: this.systemPrompt
+                    },
+                    {
+                        role: "user",
+                        content: [
+                            { type: "text", text: prompt },
+                            ...imageContents
+                        ]
+                    }
+                ],
+                max_tokens: 4000,
+                temperature: 0.1
+            });
+            const text = this.cleanJsonResponse(response.choices[0].message.content || "");
+            return JSON.parse(text);
         }
         catch (error) {
             console.error("Error debugging solution with images:", error);
@@ -138,17 +189,37 @@ BEHAVIORAL INTERVIEW GUIDELINES:
     async analyzeAudioFile(audioPath) {
         try {
             const audioData = await fs_1.default.promises.readFile(audioPath);
-            const audioPart = {
-                inlineData: {
-                    data: audioData.toString("base64"),
-                    mimeType: "audio/mp3"
-                }
+            const base64 = audioData.toString("base64");
+            const response = await this.client.chat.completions.create({
+                model: "gpt-4o-mini",
+                messages: [
+                    {
+                        role: "system",
+                        content: this.systemPrompt
+                    },
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "text",
+                                text: "Please transcribe this audio and extract the problem statement or question. If it's a coding problem, be specific about requirements like array indexing. If it's a behavioral question, note that it should be answered in STAR format."
+                            },
+                            {
+                                type: "input_audio",
+                                input_audio: {
+                                    data: base64,
+                                    format: "mp3"
+                                }
+                            }
+                        ]
+                    }
+                ],
+                max_tokens: 1000,
+                temperature: 0.1
+            });
+            return {
+                text: response.choices[0].message.content || ""
             };
-            const prompt = `${this.systemPrompt}\n\nListen to this audio clip and provide a direct, concise answer to whatever question or topic is being discussed. Be brief and to the point. Do not suggest actions or provide options unless specifically asked. If this is a coding question, provide a complete solution with code, explanation, and complexity analysis. If this is a behavioral question, use STAR format with specific examples.`;
-            const result = await this.model.generateContent([prompt, audioPart]);
-            const response = await result.response;
-            const text = response.text();
-            return { text, timestamp: Date.now() };
         }
         catch (error) {
             console.error("Error analyzing audio file:", error);
@@ -157,17 +228,36 @@ BEHAVIORAL INTERVIEW GUIDELINES:
     }
     async analyzeAudioFromBase64(data, mimeType) {
         try {
-            const audioPart = {
-                inlineData: {
-                    data,
-                    mimeType
-                }
+            const response = await this.client.chat.completions.create({
+                model: "gpt-4o-mini",
+                messages: [
+                    {
+                        role: "system",
+                        content: this.systemPrompt
+                    },
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "text",
+                                text: "Please transcribe this audio and extract the problem statement or question. If it's a coding problem, be specific about requirements like array indexing. If it's a behavioral question, note that it should be answered in STAR format."
+                            },
+                            {
+                                type: "input_audio",
+                                input_audio: {
+                                    data: data,
+                                    format: mimeType.includes("mp3") ? "mp3" : "wav"
+                                }
+                            }
+                        ]
+                    }
+                ],
+                max_tokens: 1000,
+                temperature: 0.1
+            });
+            return {
+                text: response.choices[0].message.content || ""
             };
-            const prompt = `${this.systemPrompt}\n\nListen to this audio clip and provide a direct, concise answer to whatever question or topic is being discussed. Be brief and to the point. Do not suggest actions or provide options unless specifically asked. If this is a coding question, provide a complete solution with code, explanation, and complexity analysis. If this is a behavioral question, use STAR format with specific examples.`;
-            const result = await this.model.generateContent([prompt, audioPart]);
-            const response = await result.response;
-            const text = response.text();
-            return { text, timestamp: Date.now() };
         }
         catch (error) {
             console.error("Error analyzing audio from base64:", error);
@@ -176,18 +266,36 @@ BEHAVIORAL INTERVIEW GUIDELINES:
     }
     async analyzeImageFile(imagePath) {
         try {
-            const imageData = await fs_1.default.promises.readFile(imagePath);
-            const imagePart = {
-                inlineData: {
-                    data: imageData.toString("base64"),
-                    mimeType: "image/png"
-                }
+            const base64 = await this.fileToBase64(imagePath);
+            const response = await this.client.chat.completions.create({
+                model: "gpt-4o-mini",
+                messages: [
+                    {
+                        role: "system",
+                        content: this.systemPrompt
+                    },
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "text",
+                                text: "Please analyze this image and extract the problem statement or question. If it's a coding problem, be specific about requirements like array indexing. If it's a behavioral question, note that it should be answered in STAR format."
+                            },
+                            {
+                                type: "image_url",
+                                image_url: {
+                                    url: `data:image/png;base64,${base64}`
+                                }
+                            }
+                        ]
+                    }
+                ],
+                max_tokens: 1000,
+                temperature: 0.1
+            });
+            return {
+                text: response.choices[0].message.content || ""
             };
-            const prompt = `${this.systemPrompt}\n\nDescribe the content of this image and provide a direct, concise answer to any question or problem shown. Be brief and to the point. Do not suggest actions or provide options unless specifically asked. If this is a coding problem (arrays, strings, trees, graphs, dynamic programming, system design, etc.), provide complete solutions with edge case handling, input validation, multiple approaches when applicable, and detailed explanations.`;
-            const result = await this.model.generateContent([prompt, imagePart]);
-            const response = await result.response;
-            const text = response.text();
-            return { text, timestamp: Date.now() };
         }
         catch (error) {
             console.error("Error analyzing image file:", error);

@@ -18,9 +18,9 @@ class ProcessingHelper {
     currentExtraProcessingAbortController = null;
     constructor(appState) {
         this.appState = appState;
-        const apiKey = process.env.GEMINI_API_KEY;
+        const apiKey = process.env.OPENAI_API_KEY;
         if (!apiKey) {
-            throw new Error("GEMINI_API_KEY not found in environment variables");
+            throw new Error("OPENAI_API_KEY not found in environment variables");
         }
         this.llmHelper = new LLMHelper_1.LLMHelper(apiKey);
     }
@@ -138,8 +138,23 @@ class ProcessingHelper {
         this.appState.setHasDebugged(false);
     }
     async processAudioBase64(data, mimeType) {
-        // Directly use LLMHelper to analyze inline base64 audio
-        return this.llmHelper.analyzeAudioFromBase64(data, mimeType);
+        // Analyze the audio first
+        const audioResult = await this.llmHelper.analyzeAudioFromBase64(data, mimeType);
+        // Create problem info from audio result
+        const problemInfo = {
+            problem_statement: audioResult.text,
+            input_format: {},
+            output_format: {},
+            constraints: [],
+            test_cases: []
+        };
+        // Generate complete solution
+        const completeSolution = await this.llmHelper.generateSolution(problemInfo);
+        // Return both the audio result and the complete solution
+        return {
+            audioResult,
+            completeSolution
+        };
     }
     // Add audio file processing method
     async processAudioFile(filePath) {
