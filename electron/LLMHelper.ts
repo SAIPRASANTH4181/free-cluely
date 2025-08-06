@@ -110,7 +110,7 @@ export class LLMHelper {
           mimeType: "audio/mp3"
         }
       };
-      const prompt = `${this.systemPrompt}\n\nListen to this audio clip and provide a direct, concise answer to whatever question or topic is being discussed. Be brief and to the point. Do not suggest actions or provide options unless specifically asked.`;
+      const prompt = `${this.systemPrompt}\n\nYou are an AI interviewer/assistant. Listen to this audio clip and provide a helpful, detailed response to whatever question or topic is being discussed. If it's a technical question, explain concepts clearly with examples. If it's a coding problem, provide step-by-step explanations and solutions. Be thorough and educational in your responses.`;
       const result = await this.model.generateContent([prompt, audioPart]);
       const response = await result.response;
       const text = response.text();
@@ -129,7 +129,7 @@ export class LLMHelper {
           mimeType
         }
       };
-      const prompt = `${this.systemPrompt}\n\nListen to this audio clip and provide a direct, concise answer to whatever question or topic is being discussed. Be brief and to the point. Do not suggest actions or provide options unless specifically asked.`;
+      const prompt = `${this.systemPrompt}\n\nYou are an AI interviewer/assistant. Listen to this audio clip and provide a helpful, detailed response to whatever question or topic is being discussed. If it's a technical question, explain concepts clearly with examples. If it's a coding problem, provide step-by-step explanations and solutions. Be thorough and educational in your responses.`;
       const result = await this.model.generateContent([prompt, audioPart]);
       const response = await result.response;
       const text = response.text();
