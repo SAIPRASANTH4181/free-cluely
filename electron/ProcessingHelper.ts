@@ -158,8 +158,26 @@ export class ProcessingHelper {
   }
 
   public async processAudioBase64(data: string, mimeType: string) {
-    // Directly use LLMHelper to analyze inline base64 audio
-    return this.llmHelper.analyzeAudioFromBase64(data, mimeType);
+    // Analyze the audio first
+    const audioResult = await this.llmHelper.analyzeAudioFromBase64(data, mimeType);
+    
+    // Create problem info from audio result
+    const problemInfo = { 
+      problem_statement: audioResult.text, 
+      input_format: {}, 
+      output_format: {}, 
+      constraints: [] as any[], 
+      test_cases: [] as any[] 
+    };
+    
+    // Generate complete solution
+    const completeSolution = await this.llmHelper.generateSolution(problemInfo);
+    
+    // Return both the audio result and the complete solution
+    return {
+      audioResult,
+      completeSolution
+    };
   }
 
   // Add audio file processing method
