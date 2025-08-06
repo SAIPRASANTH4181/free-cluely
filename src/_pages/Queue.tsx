@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react"
 import { useQuery } from "react-query"
 import ScreenshotQueue from "../components/Queue/ScreenshotQueue"
+import { EnhancedScreenshotQueue } from "../components/Queue/EnhancedScreenshotQueue"
 import {
   Toast,
   ToastTitle,
@@ -141,6 +142,19 @@ const Queue: React.FC<QueueProps> = ({ setView }) => {
         </Toast>
 
         <div className="space-y-3 w-fit">
+          {/* Enhanced Queue System */}
+          <EnhancedScreenshotQueue 
+            onItemComplete={(item) => {
+              console.log('Item completed:', item);
+              refetch();
+            }}
+            onItemError={(item) => {
+              console.log('Item error:', item);
+              showToast("Processing Error", `Failed to process screenshot: ${item.metadata?.error}`, "error");
+            }}
+          />
+          
+          {/* Legacy Queue System (for backward compatibility) */}
           <ScreenshotQueue
             isLoading={false}
             screenshots={screenshots}
