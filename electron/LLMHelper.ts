@@ -10,7 +10,27 @@ IMPORTANT CODING GUIDELINES:
 - When asked for the "nth element", return arr[n-1], not n itself.
 - For example: "5th element" should return arr[4], not 5.
 - Always provide the actual element value or correct array access, not the position number.
-- If the problem involves coding, provide working code that correctly handles the specific requirements.`
+- If the problem involves coding, provide working code that correctly handles the specific requirements.
+- For coding problems, provide COMPLETE solutions including:
+  * Full function/class implementation with proper edge case handling
+  * Input validation (null checks, type checks, bounds checking)
+  * Error handling for invalid inputs
+  * Clear code comments explaining the logic
+  * Example usage with test cases
+  * Time and space complexity analysis
+  * Detailed explanation of how the code works
+
+COMPREHENSIVE DSA & CODING GUIDELINES:
+- Handle ANY type of coding problem: Arrays, Strings, Trees, Graphs, Dynamic Programming, System Design, etc.
+- For complex algorithms, provide step-by-step implementation with clear logic
+- Include multiple approaches when applicable (brute force, optimized, etc.)
+- For system design questions, provide architecture diagrams and trade-offs
+- For database problems, include SQL queries with proper indexing
+- For concurrency problems, handle race conditions and synchronization
+- Always consider edge cases, boundary conditions, and error scenarios
+- Provide both iterative and recursive solutions when relevant
+- Include optimization techniques (memoization, tabulation, etc.)
+- Explain the algorithm's intuition and why it works`
 
   constructor(apiKey: string) {
     const genAI = new GoogleGenerativeAI(apiKey)
@@ -59,13 +79,13 @@ IMPORTANT CODING GUIDELINES:
   public async generateSolution(problemInfo: any) {
     const prompt = `${this.systemPrompt}\n\nGiven this problem or situation:\n${JSON.stringify(problemInfo, null, 2)}\n\nPlease provide your response in the following JSON format:\n{
   "solution": {
-    "code": "The code or main answer here. For array problems, ensure correct 0-based indexing.",
+    "code": "Complete, production-ready code that handles ANY type of coding problem. Include comprehensive edge case handling, input validation, error handling, and clear comments. For complex algorithms, provide step-by-step implementation with multiple approaches when applicable.",
     "problem_statement": "Restate the problem or situation.",
-    "context": "Relevant background/context.",
+    "context": "Relevant background/context and problem analysis.",
     "suggested_responses": ["First possible answer or action", "Second possible answer or action", "..."],
-    "reasoning": "Explanation of why these suggestions are appropriate."
+    "reasoning": "Detailed explanation of the solution approach, time/space complexity, algorithm intuition, and why this solution is optimal."
   }
-}\nImportant: Return ONLY the JSON object, without any markdown formatting or code blocks.`
+}\n\nFor ANY coding problem (Arrays, Strings, Trees, Graphs, DP, System Design, etc.), ensure your code includes:\n- Complete implementation with proper edge case handling\n- Input validation and error handling\n- Clear comments explaining the algorithm logic\n- Example usage with test cases\n- Time and space complexity analysis\n- Multiple approaches when applicable (brute force, optimized)\n- Algorithm intuition and why it works\n- For system design: architecture diagrams and trade-offs\n- For complex algorithms: step-by-step breakdown\n\nImportant: Return ONLY the JSON object, without any markdown formatting or code blocks.`
 
     console.log("[LLMHelper] Calling Gemini LLM for solution...");
     try {
@@ -88,13 +108,13 @@ IMPORTANT CODING GUIDELINES:
       
       const prompt = `${this.systemPrompt}\n\nYou are a wingman. Given:\n1. The original problem or situation: ${JSON.stringify(problemInfo, null, 2)}\n2. The current response or approach: ${currentCode}\n3. The debug information in the provided images\n\nPlease analyze the debug information and provide feedback in this JSON format:\n{
   "solution": {
-    "code": "The code or main answer here. For array problems, ensure correct 0-based indexing.",
+    "code": "Complete, production-ready code that handles ANY type of coding problem. Include comprehensive edge case handling, input validation, error handling, and clear comments. For complex algorithms, provide step-by-step implementation with multiple approaches when applicable.",
     "problem_statement": "Restate the problem or situation.",
-    "context": "Relevant background/context.",
+    "context": "Relevant background/context and problem analysis.",
     "suggested_responses": ["First possible answer or action", "Second possible answer or action", "..."],
-    "reasoning": "Explanation of why these suggestions are appropriate."
+    "reasoning": "Detailed explanation of the solution approach, time/space complexity, algorithm intuition, and why this solution is optimal."
   }
-}\nImportant: Return ONLY the JSON object, without any markdown formatting or code blocks.`
+}\n\nFor ANY coding problem (Arrays, Strings, Trees, Graphs, DP, System Design, etc.), ensure your code includes:\n- Complete implementation with proper edge case handling\n- Input validation and error handling\n- Clear comments explaining the algorithm logic\n- Example usage with test cases\n- Time and space complexity analysis\n- Multiple approaches when applicable (brute force, optimized)\n- Algorithm intuition and why it works\n- For system design: architecture diagrams and trade-offs\n- For complex algorithms: step-by-step breakdown\n\nImportant: Return ONLY the JSON object, without any markdown formatting or code blocks.`
 
       const result = await this.model.generateContent([prompt, ...imageParts])
       const response = await result.response
@@ -156,7 +176,7 @@ IMPORTANT CODING GUIDELINES:
           mimeType: "image/png"
         }
       };
-      const prompt = `${this.systemPrompt}\n\nDescribe the content of this image and provide a direct, concise answer to any question or problem shown. Be brief and to the point. Do not suggest actions or provide options unless specifically asked. If this is a coding problem involving arrays, remember that arrays are 0-indexed and provide the correct array access (e.g., arr[4] for the 5th element).`;
+      const prompt = `${this.systemPrompt}\n\nDescribe the content of this image and provide a direct, concise answer to any question or problem shown. Be brief and to the point. Do not suggest actions or provide options unless specifically asked. If this is a coding problem (arrays, strings, trees, graphs, dynamic programming, system design, etc.), provide complete solutions with edge case handling, input validation, multiple approaches when applicable, and detailed explanations.`;
       const result = await this.model.generateContent([prompt, imagePart]);
       const response = await result.response;
       const text = response.text();
