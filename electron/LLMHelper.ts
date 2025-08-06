@@ -3,7 +3,14 @@ import fs from "fs"
 
 export class LLMHelper {
   private model: GenerativeModel
-  private readonly systemPrompt = `You are Wingman AI, a helpful assistant for any kind of problem or situation (not just coding). For any user input, provide direct, concise answers without unnecessary suggestions or options unless specifically asked.`
+  private readonly systemPrompt = `You are Wingman AI, a helpful assistant for any kind of problem or situation (not just coding). For any user input, provide direct, concise answers without unnecessary suggestions or options unless specifically asked.
+
+IMPORTANT CODING GUIDELINES:
+- For array indexing problems: Remember that arrays are 0-indexed. The 1st element is at index 0, 2nd at index 1, etc.
+- When asked for the "nth element", return arr[n-1], not n itself.
+- For example: "5th element" should return arr[4], not 5.
+- Always provide the actual element value or correct array access, not the position number.
+- If the problem involves coding, provide working code that correctly handles the specific requirements.`
 
   constructor(apiKey: string) {
     const genAI = new GoogleGenerativeAI(apiKey)
@@ -33,7 +40,7 @@ export class LLMHelper {
       const imageParts = await Promise.all(imagePaths.map(path => this.fileToGenerativePart(path)))
       
       const prompt = `${this.systemPrompt}\n\nYou are a wingman. Please analyze these images and extract the following information in JSON format:\n{
-  "problem_statement": "A clear statement of the problem or situation depicted in the images.",
+  "problem_statement": "A clear statement of the problem or situation depicted in the images. If it's a coding problem, be specific about requirements like array indexing.",
   "context": "Relevant background or context from the images.",
   "suggested_responses": ["First possible answer or action", "Second possible answer or action", "..."],
   "reasoning": "Explanation of why these suggestions are appropriate."
@@ -52,7 +59,7 @@ export class LLMHelper {
   public async generateSolution(problemInfo: any) {
     const prompt = `${this.systemPrompt}\n\nGiven this problem or situation:\n${JSON.stringify(problemInfo, null, 2)}\n\nPlease provide your response in the following JSON format:\n{
   "solution": {
-    "code": "The code or main answer here.",
+    "code": "The code or main answer here. For array problems, ensure correct 0-based indexing.",
     "problem_statement": "Restate the problem or situation.",
     "context": "Relevant background/context.",
     "suggested_responses": ["First possible answer or action", "Second possible answer or action", "..."],
@@ -81,7 +88,7 @@ export class LLMHelper {
       
       const prompt = `${this.systemPrompt}\n\nYou are a wingman. Given:\n1. The original problem or situation: ${JSON.stringify(problemInfo, null, 2)}\n2. The current response or approach: ${currentCode}\n3. The debug information in the provided images\n\nPlease analyze the debug information and provide feedback in this JSON format:\n{
   "solution": {
-    "code": "The code or main answer here.",
+    "code": "The code or main answer here. For array problems, ensure correct 0-based indexing.",
     "problem_statement": "Restate the problem or situation.",
     "context": "Relevant background/context.",
     "suggested_responses": ["First possible answer or action", "Second possible answer or action", "..."],
@@ -149,7 +156,7 @@ export class LLMHelper {
           mimeType: "image/png"
         }
       };
-      const prompt = `${this.systemPrompt}\n\nDescribe the content of this image and provide a direct, concise answer to any question or problem shown. Be brief and to the point. Do not suggest actions or provide options unless specifically asked.`;
+      const prompt = `${this.systemPrompt}\n\nDescribe the content of this image and provide a direct, concise answer to any question or problem shown. Be brief and to the point. Do not suggest actions or provide options unless specifically asked. If this is a coding problem involving arrays, remember that arrays are 0-indexed and provide the correct array access (e.g., arr[4] for the 5th element).`;
       const result = await this.model.generateContent([prompt, imagePart]);
       const response = await result.response;
       const text = response.text();
