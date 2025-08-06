@@ -30,7 +30,18 @@ COMPREHENSIVE DSA & CODING GUIDELINES:
 - Always consider edge cases, boundary conditions, and error scenarios
 - Provide both iterative and recursive solutions when relevant
 - Include optimization techniques (memoization, tabulation, etc.)
-- Explain the algorithm's intuition and why it works`
+- Explain the algorithm's intuition and why it works
+
+BEHAVIORAL INTERVIEW GUIDELINES:
+- For behavioral questions, use the STAR format:
+  * SITUATION: Describe the specific situation or context
+  * TASK: Explain your role and responsibilities
+  * ACTION: Detail the specific actions you took
+  * RESULT: Share the outcomes and what you learned
+- Provide concrete examples with specific details
+- Quantify results when possible (numbers, percentages, metrics)
+- Show both technical skills and soft skills (leadership, teamwork, problem-solving)
+- Demonstrate growth and learning from challenges`
 
   constructor(apiKey: string) {
     const genAI = new GoogleGenerativeAI(apiKey)
@@ -85,7 +96,7 @@ COMPREHENSIVE DSA & CODING GUIDELINES:
     "suggested_responses": ["First possible answer or action", "Second possible answer or action", "..."],
     "reasoning": "Detailed explanation of the solution approach, time/space complexity, algorithm intuition, and why this solution is optimal."
   }
-}\n\nFor ANY coding problem (Arrays, Strings, Trees, Graphs, DP, System Design, etc.), ensure your code includes:\n- Complete implementation with proper edge case handling\n- Input validation and error handling\n- Clear comments explaining the algorithm logic\n- Example usage with test cases\n- Time and space complexity analysis\n- Multiple approaches when applicable (brute force, optimized)\n- Algorithm intuition and why it works\n- For system design: architecture diagrams and trade-offs\n- For complex algorithms: step-by-step breakdown\n\nImportant: Return ONLY the JSON object, without any markdown formatting or code blocks.`
+}\n\nFor ANY coding problem (Arrays, Strings, Trees, Graphs, DP, System Design, etc.), ensure your code includes:\n- Complete implementation with proper edge case handling\n- Input validation and error handling\n- Clear comments explaining the algorithm logic\n- Example usage with test cases\n- Time and space complexity analysis\n- Multiple approaches when applicable (brute force, optimized)\n- Algorithm intuition and why it works\n- For system design: architecture diagrams and trade-offs\n- For complex algorithms: step-by-step breakdown\n\nFor behavioral questions, use STAR format with concrete examples and quantified results.\n\nImportant: Return ONLY the JSON object, without any markdown formatting or code blocks.`
 
     console.log("[LLMHelper] Calling Gemini LLM for solution...");
     try {
@@ -137,7 +148,7 @@ COMPREHENSIVE DSA & CODING GUIDELINES:
           mimeType: "audio/mp3"
         }
       };
-      const prompt = `${this.systemPrompt}\n\nListen to this audio clip and provide a direct, concise answer to whatever question or topic is being discussed. Be brief and to the point. Do not suggest actions or provide options unless specifically asked.`;
+      const prompt = `${this.systemPrompt}\n\nListen to this audio clip and provide a direct, concise answer to whatever question or topic is being discussed. Be brief and to the point. Do not suggest actions or provide options unless specifically asked. If this is a coding question, provide a complete solution with code, explanation, and complexity analysis. If this is a behavioral question, use STAR format with specific examples.`;
       const result = await this.model.generateContent([prompt, audioPart]);
       const response = await result.response;
       const text = response.text();
@@ -156,7 +167,7 @@ COMPREHENSIVE DSA & CODING GUIDELINES:
           mimeType
         }
       };
-      const prompt = `${this.systemPrompt}\n\nListen to this audio clip and provide a direct, concise answer to whatever question or topic is being discussed. Be brief and to the point. Do not suggest actions or provide options unless specifically asked.`;
+      const prompt = `${this.systemPrompt}\n\nListen to this audio clip and provide a direct, concise answer to whatever question or topic is being discussed. Be brief and to the point. Do not suggest actions or provide options unless specifically asked. If this is a coding question, provide a complete solution with code, explanation, and complexity analysis. If this is a behavioral question, use STAR format with specific examples.`;
       const result = await this.model.generateContent([prompt, audioPart]);
       const response = await result.response;
       const text = response.text();
