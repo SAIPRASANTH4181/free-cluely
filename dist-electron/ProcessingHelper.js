@@ -43,8 +43,18 @@ class ProcessingHelper {
                 this.appState.setView('solutions');
                 try {
                     const audioResult = await this.llmHelper.analyzeAudioFile(lastPath);
-                    mainWindow.webContents.send(this.appState.PROCESSING_EVENTS.PROBLEM_EXTRACTED, audioResult);
-                    this.appState.setProblemInfo({ problem_statement: audioResult.text, input_format: {}, output_format: {}, constraints: [], test_cases: [] });
+                    const problemInfo = {
+                        problem_statement: audioResult.text,
+                        input_format: {},
+                        output_format: {},
+                        constraints: [],
+                        test_cases: []
+                    };
+                    mainWindow.webContents.send(this.appState.PROCESSING_EVENTS.PROBLEM_EXTRACTED, problemInfo);
+                    this.appState.setProblemInfo(problemInfo);
+                    // Generate complete solution immediately after audio problem extraction
+                    const completeSolution = await this.llmHelper.generateSolution(problemInfo);
+                    mainWindow.webContents.send(this.appState.PROCESSING_EVENTS.SOLUTION_SUCCESS, completeSolution);
                     return;
                 }
                 catch (err) {
@@ -70,6 +80,9 @@ class ProcessingHelper {
                 };
                 mainWindow.webContents.send(this.appState.PROCESSING_EVENTS.PROBLEM_EXTRACTED, problemInfo);
                 this.appState.setProblemInfo(problemInfo);
+                // Generate complete solution immediately after problem extraction
+                const completeSolution = await this.llmHelper.generateSolution(problemInfo);
+                mainWindow.webContents.send(this.appState.PROCESSING_EVENTS.SOLUTION_SUCCESS, completeSolution);
             }
             catch (error) {
                 console.error("Image processing error:", error);
