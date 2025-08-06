@@ -3,7 +3,7 @@ import fs from "fs"
 
 export class LLMHelper {
   private model: GenerativeModel
-  private readonly systemPrompt = `You are Wingman AI, a helpful, proactive assistant for any kind of problem or situation (not just coding). For any user input, analyze the situation, provide a clear problem statement, relevant context, and suggest several possible responses or actions the user could take next. Always explain your reasoning. Present your suggestions as a list of options or next steps.`
+  private readonly systemPrompt = `You are Wingman AI, a helpful assistant for any kind of problem or situation (not just coding). For any user input, provide direct, concise answers without unnecessary suggestions or options unless specifically asked.`
 
   constructor(apiKey: string) {
     const genAI = new GoogleGenerativeAI(apiKey)
@@ -110,7 +110,7 @@ export class LLMHelper {
           mimeType: "audio/mp3"
         }
       };
-      const prompt = `${this.systemPrompt}\n\nDescribe this audio clip in a short, concise answer. In addition to your main answer, suggest several possible actions or responses the user could take next based on the audio. Do not return a structured JSON object, just answer naturally as you would to a user.`;
+      const prompt = `${this.systemPrompt}\n\nListen to this audio clip and provide a direct, concise answer to whatever question or topic is being discussed. Be brief and to the point. Do not suggest actions or provide options unless specifically asked.`;
       const result = await this.model.generateContent([prompt, audioPart]);
       const response = await result.response;
       const text = response.text();
@@ -129,7 +129,7 @@ export class LLMHelper {
           mimeType
         }
       };
-      const prompt = `${this.systemPrompt}\n\nDescribe this audio clip in a short, concise answer. In addition to your main answer, suggest several possible actions or responses the user could take next based on the audio. Do not return a structured JSON object, just answer naturally as you would to a user and be concise.`;
+      const prompt = `${this.systemPrompt}\n\nListen to this audio clip and provide a direct, concise answer to whatever question or topic is being discussed. Be brief and to the point. Do not suggest actions or provide options unless specifically asked.`;
       const result = await this.model.generateContent([prompt, audioPart]);
       const response = await result.response;
       const text = response.text();
@@ -149,7 +149,7 @@ export class LLMHelper {
           mimeType: "image/png"
         }
       };
-      const prompt = `${this.systemPrompt}\n\nDescribe the content of this image in a short, concise answer. In addition to your main answer, suggest several possible actions or responses the user could take next based on the image. Do not return a structured JSON object, just answer naturally as you would to a user. Be concise and brief.`;
+      const prompt = `${this.systemPrompt}\n\nDescribe the content of this image and provide a direct, concise answer to any question or problem shown. Be brief and to the point. Do not suggest actions or provide options unless specifically asked.`;
       const result = await this.model.generateContent([prompt, imagePart]);
       const response = await result.response;
       const text = response.text();
