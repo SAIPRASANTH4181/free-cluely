@@ -46,13 +46,13 @@ export class ProcessingHelper {
         this.appState.setView('solutions');
         try {
           const audioResult = await this.llmHelper.analyzeAudioFile(lastPath);
-          const problemInfo = { 
-            problem_statement: audioResult.text, 
-            input_format: {}, 
-            output_format: {}, 
-            constraints: [], 
-            test_cases: [] 
-          };
+                     const problemInfo = { 
+             problem_statement: audioResult.text, 
+             input_format: {}, 
+             output_format: {}, 
+             constraints: [] as any[], 
+             test_cases: [] as any[] 
+           };
           mainWindow.webContents.send(this.appState.PROCESSING_EVENTS.PROBLEM_EXTRACTED, problemInfo);
           this.appState.setProblemInfo(problemInfo);
           
